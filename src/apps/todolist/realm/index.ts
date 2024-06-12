@@ -15,12 +15,12 @@ const TodoRealm = new Realm({ schema: [TodoSchema] });
 const getTodoItems = (): ITodoItem[] => {
   let res;
   try {
-    res = TodoRealm.objects(TodoSchemaName);
+    res = TodoRealm.objects(TodoSchemaName) as unknown as ITodoItem[];
   } catch (e) {
     console.log('todolist读取失败', e);
     return [];
   }
-  return res as unknown as ITodoItem[];
+  return res;
 };
 
 const addTodoItem = (item: ITodoItem): boolean => {
@@ -35,4 +35,21 @@ const addTodoItem = (item: ITodoItem): boolean => {
   return true;
 };
 
-export { addTodoItem, getTodoItems };
+const deleteTodo = (completeId: number) => {
+  const todos = getTodoItems();
+  const n = todos.length;
+  for (let i = 0; i < n; i++) {
+    if (todos[i].todoId === completeId) {
+      try {
+        TodoRealm.write(() => {
+          TodoRealm.delete(todos[i]);
+        });
+        return todos[i];
+      } catch (e) {
+        console.log('todolist删除失败', e);
+      }
+    }
+  }
+};
+
+export { addTodoItem, getTodoItems, deleteTodo };

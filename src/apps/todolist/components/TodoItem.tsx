@@ -1,10 +1,10 @@
 import React from 'react';
-import { TodoRealm } from '@/realm/index';
-import { Text, View } from 'react-native';
-import { styles } from '../index';
+import { ITodoItem } from '../realm/index';
+import { ListItem } from '@react-native-material/core';
+
 interface ITodoItemProps {
   key: string
-  data: TodoRealm.ITodoItem
+  data: ITodoItem
   index?: string
   separators?: any
 }
@@ -12,16 +12,10 @@ interface ITodoItemProps {
 const TodoItem: React.FC<ITodoItemProps> = (p) => {
   const { data } = p;
   return (
-    // <SwipeRow
-    //   disableLeftSwipe={true}
-    // >
-    //   {/* <View><Text>{ data.todoId }</Text></View> */}
-    //   <></>
-    //   <View><Text>{ data.content }</Text></View>
-    // </SwipeRow>
-    <View style={[styles.todoItem, styles.height]}>
-      <Text style={styles.fontSize}>{ data.content }</Text>
-    </View>
+    <ListItem
+      title={data.content}
+      secondaryText={`creted at ${data.createdAt.toLocaleDateString()}`}
+    />
   );
 };
 
