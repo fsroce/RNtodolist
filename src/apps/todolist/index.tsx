@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
-import { getTodoItems, ITodoItem, deleteTodoItem, completeTodoItem, undoneTodoItem } from './realm/index';
+import React, { useEffect, useState } from 'react';
+import { getTodoItems, ITodoItem } from './realm/index';
 import { SwipeListView } from 'react-native-swipe-list-view';
-import { StyleSheet } from 'react-native';
-import { View, Text } from 'react-native-ui-lib';
+import { StyleSheet, ScrollView } from 'react-native';
+import { View, Text, FloatingButton } from 'react-native-ui-lib';
 import { Button } from '@react-native-material/core';
 import TodoItem from './components/TodoItem';
-import { addTodoItem } from '@/apps/todolist/realm';
+import { addTodoItem, deleteTodoItem, updTodoItem } from '@/apps/todolist/realm';
+import { arr2obj, obj2arr } from '@/helpers';
+import useUserExit from '@/hooks/useUserExit';
+import DialogCom from './components/DialogCom';
 const styles = StyleSheet.create({
   rowBack: {
     alignItems: 'center',
@@ -36,7 +39,8 @@ const SwiperArea = (p: swiperAreaType): React.JSX.Element => {
         highlightStyle={text.highLightStyle}
       >{text.text}</Text>
       <SwipeListView
-        style={{ flexGrow: 0 }}
+        useFlatList
+        nestedScrollEnabled
         disableRightSwipe
         data={swiperListView.data.map((_) => ({ key: `${_.todoId}`, data: _ }))}
         renderItem={(data) => <TodoItem {...data.item} />}
@@ -48,16 +52,51 @@ const SwiperArea = (p: swiperAreaType): React.JSX.Element => {
             )}
           </View>
         )}
-        rightOpenValue={-120}
+        rightOpenValue={-140}
       />
     </>
   );
 };
+type ITodoList = Record<string | number, ITodoItem>;
 const TodoListApp: React.FC = () => {
-  const [list, setList] = useState<ITodoItem[]>(getTodoItems());
+  const [list] = useState<ITodoItem[]>(getTodoItems());
+  const [c, setC] = useState<ITodoList>({});
+  const [u, setU] = useState<ITodoList>({});
+  const [dialogVisible, setDialogVisible] = useState<boolean>(false);
+  const [operationRecord, setOperationRecord] = useState<Record<'add' | 'del' | 'upd', (ITodoItem | number | string)[]>>({
+    add: [],
+    del: [],
+    upd: [],
+  });
+  const saveChange = () => {
+    console.log('开始保存');
+    const { add, del, upd } = operationRecord;
+    del.forEach((_) => {
+      deleteTodoItem(_ as number);
+    });
+    upd.forEach((_) => {
+      updTodoItem(_ as ITodoItem);
+    });
+    add.forEach((_) => {
+      addTodoItem(_ as ITodoItem);
+    });
+    setOperationRecord({
+      add: [], upd: [], del: [],
+    });
+    console.log('保存完成');
+  };
+  useUserExit(undefined, saveChange);
+  useEffect(() => {
+    // 仅在初始化时运行一次
+    const _c = list.filter((_) => _.completed);
+    setC(arr2obj(_c, 'todoId'));
+    const _u = list.filter((_) => !_.completed);
+    setU(arr2obj(_u, 'todoId'));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!list.length) {
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 20; i++) {
       addTodoItem({
         todoId: i,
         content: `${i}`,
@@ -66,35 +105,109 @@ const TodoListApp: React.FC = () => {
       });
     }
   }
-
-  const todoComplete = (item: ITodoItem) => {
-    completeTodoItem(item.todoId) && setList(getTodoItems());
+  const setComplete = (item: ITodoItem) => {
+    const { todoId } = item;
+    if (operationRecord.del.includes(item)) {
+      return;
+    }
+    const _t = { ...item };
+    _t.completed = true;
+    _t.completedAt = new Date();
+    const idx = operationRecord.upd.indexOf(item);
+    if (idx !== -1) {
+      operationRecord.upd.splice(idx, 1);
+    }
+    operationRecord.upd.push(_t);
+    setU(prevU => {
+      const updU = { ...prevU };
+      delete updU[todoId];
+      return updU;
+    });
+    setC(prevC => {
+      const updC = { ...prevC, [todoId]: _t };
+      return updC;
+    });
   };
   const removeTodo = (item: ITodoItem) => {
-    deleteTodoItem(item.todoId) && setList(getTodoItems());
+    const { todoId } = item;
+    operationRecord.del.push(todoId);
+    if (c[todoId]) {
+      setC(prevC => {
+        const updC = { ...prevC };
+        delete updC[todoId];
+        return updC;
+      });
+    }
+    if (u[todoId]) {
+      setU(prevU => {
+        const updU = { ...prevU };
+        delete updU[todoId];
+        return updU;
+      });
+    }
   };
   const undone = (item: ITodoItem) => {
-    undoneTodoItem(item.todoId) && setList(getTodoItems());
+    const { todoId } = item;
+    if (operationRecord.del.includes(todoId)) {
+      return;
+    }
+    const _t = { ...item };
+    _t.completed = false;
+    _t.completedAt = undefined;
+    const idx = operationRecord.upd.indexOf(item);
+    if (idx !== -1) {
+      operationRecord.upd.splice(idx, 1);
+    }
+    operationRecord.upd.push(_t);
+    setU(prevU => {
+      const updU = { ...prevU, [todoId]: _t };
+      return updU;
+    });
+    setC(prevC => {
+      const updC = { ...prevC };
+      delete updC[todoId];
+      return updC;
+    });
+  };
+  const addTodo = (content :string) => {
+    const _t: ITodoItem = {
+      todoId: Date.now(),
+      content,
+      completed: false,
+      createdAt: new Date(),
+    };
+    operationRecord.add.push(_t);
   };
   return (
-    <View useSafeArea style={{ flex: 1 }}>
+    <>
+      <DialogCom
+        addTodo={addTodo}
+        visible={dialogVisible}
+        setVisible={setDialogVisible}
+      />
+      <ScrollView style={{ marginTop: 10, marginBottom: 80 }}>
       <SwiperArea
         text={{ text: 'UndoneItems', highLightString: 'Undone', highLightStyle: { color: 'red' } }}
-        swiperListView={{ data: list.filter((_) => !_.completed) }}
+        swiperListView={{ data: obj2arr(u)}}
         viewButton={[
-          { title: 'Com', onPress: todoComplete },
+          { title: 'Com', onPress: setComplete },
           { title: 'Del', onPress: removeTodo },
         ]}
       />
       <SwiperArea
         text={{ text: 'CompletedItems', highLightString: 'Completed', highLightStyle: { color: '#bfa' } }}
-        swiperListView={{ data: list.filter((_) => _.completed) }}
+        swiperListView={{ data: obj2arr(c) }}
         viewButton={[
           { title: 'Und', onPress: undone },
           { title: 'Del', onPress: removeTodo },
         ]}
       />
-    </View>
+      </ScrollView>
+      <FloatingButton
+        visible
+        button={{ label: 'Add', onPress: () => setDialogVisible(true) }}
+      />
+    </>
   );
 };
 

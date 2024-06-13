@@ -17,7 +17,7 @@ const TodoItem: React.FC<ITodoItemProps> = (p) => {
       secondaryText={
         data.completed ?
         `completed at ${data.completedAt?.toLocaleDateString()}` :
-        `creted at ${data.createdAt.toLocaleDateString()}`
+        `created at ${data.createdAt.toLocaleDateString()}`
       }
     />
   );

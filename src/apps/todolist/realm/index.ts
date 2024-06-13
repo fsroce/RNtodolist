@@ -35,37 +35,18 @@ const addTodoItem = (item: ITodoItem): boolean => {
   return true;
 };
 
-const completeTodoItem = (completedId : number) => {
+const updTodoItem = (item: ITodoItem): boolean => {
   try {
     TodoRealm.write(() => {
-      const todo = TodoRealm.objectForPrimaryKey(TodoSchemaName, completedId);
+      const todo = TodoRealm.objectForPrimaryKey(TodoSchemaName, item.todoId);
       if (todo) {
-        todo.completed = true;
-        todo.completedAt = new Date();
+        TodoRealm.create(TodoSchemaName, item, true);
       } else {
         throw new Error('todoId不存在');
       }
     });
   } catch (e) {
-    console.log('todo更新失败', e);
-    return false;
-  }
-  return true;
-};
-
-const undoneTodoItem = (undoneId: number) => {
-  try {
-    TodoRealm.write(() => {
-      const todo = TodoRealm.objectForPrimaryKey(TodoSchemaName, undoneId);
-      if (todo) {
-        todo.completed = false;
-        todo.completedAt = null;
-      } else {
-        throw new Error('todoId不存在');
-      }
-    });
-  } catch (e) {
-    console.log('undone失败', e);
+    console.log(e);
     return false;
   }
   return true;
@@ -88,4 +69,4 @@ const deleteTodoItem = (deleteId: number) => {
   return true;
 };
 
-export { addTodoItem, getTodoItems, deleteTodoItem, completeTodoItem, undoneTodoItem };
+export { addTodoItem, getTodoItems, deleteTodoItem, updTodoItem };
