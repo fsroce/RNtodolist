@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { getTodoItems, ITodoItem, deleteTodoItem, completeTodoItem, undoneTodoItem } from './realm/index';
+import React, { useState, useEffect } from 'react';
+import { getTodoItems, ITodoItem, deleteTodoItem, completeTodoItem, undoneTodoItem } from '../realm/index';
 import { SwipeListView } from 'react-native-swipe-list-view';
 import { StyleSheet } from 'react-native';
 import { View, Text } from 'react-native-ui-lib';
 import { Button } from '@react-native-material/core';
-import TodoItem from './components/TodoItem';
+import TodoItem from '../components/TodoItem';
 import { addTodoItem } from '@/apps/todolist/realm';
 const styles = StyleSheet.create({
   rowBack: {
@@ -55,6 +55,26 @@ const SwiperArea = (p: swiperAreaType): React.JSX.Element => {
 };
 const TodoListApp: React.FC = () => {
   const [list, setList] = useState<ITodoItem[]>(getTodoItems());
+  const [undoneItem, setUndone] = useState<ITodoItem[]>([]);
+  const [completedItem, setCompleted] = useState<ITodoItem[]>([]);
+  useEffect(() => {
+    /**
+     * bug1
+     * 这样设计会在删除元素时报错
+     * 会将已经删除的元素展示出来
+     */
+    const u = [], c = [];
+    const n = list.length;
+    for (let i = 0; i < n; i++) {
+      if (list[i].completed) {
+        c.push(list[i]);
+      } else {
+        u.push(list[i]);
+      }
+    }
+    setUndone(u);
+    setCompleted(c);
+  }, [list]);
 
   if (!list.length) {
     for (let i = 0; i < 10; i++) {
@@ -80,7 +100,7 @@ const TodoListApp: React.FC = () => {
     <>
       <SwiperArea
         text={{ text: 'UndoneItems', highLightString: 'Undone', highLightStyle: { color: 'red' } }}
-        swiperListView={{ data: list.filter((_) => !_.completed) }}
+        swiperListView={{ data: undoneItem }}
         viewButton={[
           { title: 'Com', onPress: todoComplete },
           { title: 'Del', onPress: removeTodo },
@@ -88,7 +108,7 @@ const TodoListApp: React.FC = () => {
       />
       <SwiperArea
         text={{ text: 'CompletedItems', highLightString: 'Completed', highLightStyle: { color: '#bfa' } }}
-        swiperListView={{ data: list.filter((_) => _.completed) }}
+        swiperListView={{ data: completedItem }}
         viewButton={[
           { title: 'Und', onPress: undone },
           { title: 'Del', onPress: removeTodo },

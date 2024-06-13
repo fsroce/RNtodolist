@@ -14,7 +14,11 @@ const TodoItem: React.FC<ITodoItemProps> = (p) => {
   return (
     <ListItem
       title={data.content}
-      secondaryText={`creted at ${data.createdAt.toLocaleDateString()}`}
+      secondaryText={
+        data.completed ?
+        `completed at ${data.completedAt?.toLocaleDateString()}` :
+        `creted at ${data.createdAt.toLocaleDateString()}`
+      }
     />
   );
 };

@@ -35,21 +35,57 @@ const addTodoItem = (item: ITodoItem): boolean => {
   return true;
 };
 
-const deleteTodo = (completeId: number) => {
-  const todos = getTodoItems();
-  const n = todos.length;
-  for (let i = 0; i < n; i++) {
-    if (todos[i].todoId === completeId) {
-      try {
-        TodoRealm.write(() => {
-          TodoRealm.delete(todos[i]);
-        });
-        return todos[i];
-      } catch (e) {
-        console.log('todolist删除失败', e);
+const completeTodoItem = (completedId : number) => {
+  try {
+    TodoRealm.write(() => {
+      const todo = TodoRealm.objectForPrimaryKey(TodoSchemaName, completedId);
+      if (todo) {
+        todo.completed = true;
+        todo.completedAt = new Date();
+      } else {
+        throw new Error('todoId不存在');
       }
-    }
+    });
+  } catch (e) {
+    console.log('todo更新失败', e);
+    return false;
   }
+  return true;
 };
 
-export { addTodoItem, getTodoItems, deleteTodo };
+const undoneTodoItem = (undoneId: number) => {
+  try {
+    TodoRealm.write(() => {
+      const todo = TodoRealm.objectForPrimaryKey(TodoSchemaName, undoneId);
+      if (todo) {
+        todo.completed = false;
+        todo.completedAt = null;
+      } else {
+        throw new Error('todoId不存在');
+      }
+    });
+  } catch (e) {
+    console.log('undone失败', e);
+    return false;
+  }
+  return true;
+};
+
+const deleteTodoItem = (deleteId: number) => {
+  try {
+    TodoRealm.write(() => {
+      const todo = TodoRealm.objectForPrimaryKey(TodoSchemaName, deleteId);
+      if (todo) {
+        TodoRealm.delete(todo);
+      } else {
+        throw new Error('todoId不存在');
+      }
+    });
+  } catch (e) {
+    console.log('删除todo失败', e);
+    return false;
+  }
+  return true;
+};
+
+export { addTodoItem, getTodoItems, deleteTodoItem, completeTodoItem, undoneTodoItem };
