@@ -77,7 +77,7 @@ const TodoListApp: React.FC = () => {
     undoneTodoItem(item.todoId) && setList(getTodoItems());
   };
   return (
-    <>
+    <View useSafeArea style={{ flex: 1 }}>
       <SwiperArea
         text={{ text: 'UndoneItems', highLightString: 'Undone', highLightStyle: { color: 'red' } }}
         swiperListView={{ data: list.filter((_) => !_.completed) }}
@@ -94,7 +94,7 @@ const TodoListApp: React.FC = () => {
           { title: 'Del', onPress: removeTodo },
         ]}
       />
-    </>
+    </View>
   );
 };
 
