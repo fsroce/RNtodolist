@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getTodoItems, ITodoItem } from './realm/index';
 import { SwipeListView } from 'react-native-swipe-list-view';
 import { StyleSheet, ScrollView } from 'react-native';
+import { PaperProvider } from 'react-native-paper';
 import { View, Text, FloatingButton } from 'react-native-ui-lib';
 import { Button } from '@react-native-material/core';
 import TodoItem from './components/TodoItem';
@@ -39,8 +40,6 @@ const SwiperArea = (p: swiperAreaType): React.JSX.Element => {
         highlightStyle={text.highLightStyle}
       >{text.text}</Text>
       <SwipeListView
-        useFlatList
-        nestedScrollEnabled
         disableRightSwipe
         data={swiperListView.data.map((_) => ({ key: `${_.todoId}`, data: _ }))}
         renderItem={(data) => <TodoItem {...data.item} />}
@@ -177,37 +176,38 @@ const TodoListApp: React.FC = () => {
       createdAt: new Date(),
     };
     operationRecord.add.push(_t);
+    setU({ ...u, [_t.todoId]: _t });
   };
   return (
-    <>
+    <PaperProvider>
       <DialogCom
         addTodo={addTodo}
         visible={dialogVisible}
         setVisible={setDialogVisible}
       />
-      <ScrollView style={{ marginTop: 10, marginBottom: 80 }}>
-      <SwiperArea
-        text={{ text: 'UndoneItems', highLightString: 'Undone', highLightStyle: { color: 'red' } }}
-        swiperListView={{ data: obj2arr(u)}}
-        viewButton={[
-          { title: 'Com', onPress: setComplete },
-          { title: 'Del', onPress: removeTodo },
-        ]}
-      />
-      <SwiperArea
-        text={{ text: 'CompletedItems', highLightString: 'Completed', highLightStyle: { color: '#bfa' } }}
-        swiperListView={{ data: obj2arr(c) }}
-        viewButton={[
-          { title: 'Und', onPress: undone },
-          { title: 'Del', onPress: removeTodo },
-        ]}
-      />
+      <ScrollView style={{ marginTop: 10 }}>
+        <SwiperArea
+          text={{ text: 'UndoneItems', highLightString: 'Undone', highLightStyle: { color: 'red' } }}
+          swiperListView={{ data: obj2arr(u)}}
+          viewButton={[
+            { title: 'Com', onPress: setComplete },
+            { title: 'Del', onPress: removeTodo },
+          ]}
+        />
+        <SwiperArea
+          text={{ text: 'CompletedItems', highLightString: 'Completed', highLightStyle: { color: '#bfa' } }}
+          swiperListView={{ data: obj2arr(c) }}
+          viewButton={[
+            { title: 'Und', onPress: undone },
+            { title: 'Del', onPress: removeTodo },
+          ]}
+        />
       </ScrollView>
       <FloatingButton
         visible
         button={{ label: 'Add', onPress: () => setDialogVisible(true) }}
       />
-    </>
+    </PaperProvider>
   );
 };
 

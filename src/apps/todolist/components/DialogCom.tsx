@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Button, Dialog, DialogActions, DialogContent, DialogHeader, Stack, TextInput } from '@react-native-material/core';
+import React, { useEffect, useState } from 'react';
+import { Button, Dialog, Portal, TextInput } from 'react-native-paper';
 
 interface DialogComProps {
   addTodo: (content: string) => void;
@@ -9,36 +9,31 @@ interface DialogComProps {
 const DialogCom: React.FC<DialogComProps> = (p) => {
   const { addTodo, visible, setVisible } = p;
   const [textInput, setTextInput] = useState<string>('');
+  useEffect(() => {
+    console.log('visible', visible);
+  }, [visible]);
   return (
-    <Dialog visible={visible} onDismiss={() => setVisible(false)}>
-      <DialogHeader title="add todo item" />
-      <DialogContent>
-        <Stack spacing={2}>
-          <TextInput value={textInput} />
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button
-          title="comfirm"
-          variant="text"
-          compact
-          onPress={() => {
-            addTodo(textInput);
-            setTextInput('');
-            setVisible(false);
-          }}
-        />
-        <Button
-          title="cancel"
-          variant="text"
-          compact
-          onPress={() => {
-            setTextInput('');
-            setVisible(false);
-          }}
-        />
-      </DialogActions>
-    </Dialog>
+    <Portal>
+      <Dialog visible={visible} onDismiss={() => {setVisible(false); setTextInput('');}}>
+        <Dialog.Title>Add new Item</Dialog.Title>
+        <Dialog.Content>
+          <TextInput mode="outlined" label="Todo Description" value={textInput} onChangeText={text => setTextInput(text)} />
+        </Dialog.Content>
+        <Dialog.Actions>
+          <Button
+            onPress={() => {
+              setVisible(false);
+              if (textInput !== '') {
+                addTodo(textInput);
+              }
+              setTextInput('');
+            }}
+          >
+            Done
+          </Button>
+        </Dialog.Actions>
+      </Dialog>
+    </Portal>
   );
 };
 
